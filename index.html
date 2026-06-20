@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Scegli il tuo personaggio</title>
+
+<style>
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: monospace;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url("assets/scelta personaggio.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.avatar-slot {
+  position: absolute;
+  width: 13.4%;
+  height: 28.8%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.avatar-slot:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+  filter: drop-shadow(0 0 12px #00ffd5);
+}
+
+.avatar {
+  max-width: 92%;
+  max-height: 92%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.flash {
+  position: fixed;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+  z-index: 999;
+}
+</style>
+</head>
+
+<script>
+const password = "CIAO2026";
+
+const input = prompt("Inserisci la password per accedere:");
+
+if (input !== password) {
+  document.body.innerHTML = "<h1>Accesso negato</h1>";
+  throw new Error("Accesso negato");
+}
+</script>
+
+<div class="stage">
+  <div class="avatar-slot" style="left:10.45%; top:53.55%;" onclick="selectPlayer('paolo')">
+    <img src="assets/Paolo passaporto.png" class="avatar">
+  </div>
+
+  <div class="avatar-slot" style="left:26.20%; top:53.55%;" onclick="selectPlayer('andrea')">
+    <img src="assets/Andrea passaporto.png" class="avatar">
+  </div>
+
+  <div class="avatar-slot" style="left:41.95%; top:53.55%;" onclick="selectPlayer('daniele')">
+    <img src="assets/Daniele passaporto.png" class="avatar">
+  </div>
+
+  <div class="avatar-slot" style="left:57.78%; top:53.55%;" onclick="selectPlayer('luca')">
+    <img src="assets/Luca passaporto.png" class="avatar">
+  </div>
+
+  <div class="avatar-slot" style="left:73.50%; top:53.55%;" onclick="selectPlayer('simona')">
+    <img src="assets/Simona passaporto.png" class="avatar">
+  </div>
+
+  <div class="avatar-slot" style="left:89.35%; top:53.55%;" onclick="selectPlayer('ana')">
+    <img src="assets/Ana passaporto.png" class="avatar">
+  </div>
+</div>
+
+<div id="flash" class="flash"></div>
+
+<script>
+function selectPlayer(name) {
+  localStorage.setItem("player", name);
+
+  const flash = document.getElementById("flash");
+  flash.style.opacity = "1";
+
+  setTimeout(() => {
+    flash.style.opacity = "0";
+  }, 180);
+
+  setTimeout(() => {
+    window.location.href = "game.html";
+  }, 350);
+}
+</script>
+
+</body>
+</html>
