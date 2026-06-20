@@ -35,6 +35,7 @@ html, body {
   align-items: center;
   cursor: pointer;
   transition: .15s;
+  z-index: 10;
 }
 
 .avatar-slot:hover {
@@ -43,8 +44,10 @@ html, body {
 }
 
 .avatar {
-  max-width: 92%;
-  max-height: 92%;
+  display: block;
+  width: 220px;
+  height: auto;
+  max-height: 260px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -61,41 +64,34 @@ html, body {
 </style>
 </head>
 
-<script>
-const password = "CIAO2026";
-
-const input = prompt("Inserisci la password per accedere:");
-
-if (input !== password) {
-  document.body.innerHTML = "<h1>Accesso negato</h1>";
-  throw new Error("Accesso negato");
-}
-</script>
+<body>
 
 <div class="stage">
+
   <div class="avatar-slot" style="left:10.45%; top:53.55%;" onclick="selectPlayer('paolo')">
-    <img src="assets/paolo passaporto.png" class="avatar">
+    <img src="assets/paolo passaporto.png" class="avatar" alt="Paolo">
   </div>
 
   <div class="avatar-slot" style="left:26.20%; top:53.55%;" onclick="selectPlayer('andrea')">
-    <img src="assets/andrea passaporto.png" class="avatar">
+    <img src="assets/andrea passaporto.png" class="avatar" alt="Andrea">
   </div>
 
   <div class="avatar-slot" style="left:41.95%; top:53.55%;" onclick="selectPlayer('daniele')">
-    <img src="assets/daniele passaporto.png" class="avatar">
+    <img src="assets/daniele passaporto.png" class="avatar" alt="Daniele">
   </div>
 
   <div class="avatar-slot" style="left:57.78%; top:53.55%;" onclick="selectPlayer('luca')">
-    <img src="assets/luca passaporto.png" class="avatar">
+    <img src="assets/luca passaporto.png" class="avatar" alt="Luca">
   </div>
 
   <div class="avatar-slot" style="left:73.50%; top:53.55%;" onclick="selectPlayer('simona')">
-    <img src="assets/simona passaporto.png" class="avatar">
+    <img src="assets/simona passaporto.png" class="avatar" alt="Simona">
   </div>
 
   <div class="avatar-slot" style="left:89.35%; top:53.55%;" onclick="selectPlayer('ana')">
-    <img src="assets/ana passaporto.png" class="avatar">
+    <img src="assets/ana passaporto.png" class="avatar" alt="Ana">
   </div>
+
 </div>
 
 <div id="flash" class="flash"></div>
