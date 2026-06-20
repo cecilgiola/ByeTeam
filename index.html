@@ -65,6 +65,16 @@ html, body {
 </head>
 
 <body>
+<script>
+const password = "CIAO2026";
+
+const input = prompt("Inserisci la password per accedere:");
+
+if (input !== password) {
+  document.body.innerHTML = "<h1>Accesso negato</h1>";
+  throw new Error("Accesso negato");
+}
+</script>
 
 <div class="stage">
 
