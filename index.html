@@ -5,6 +5,7 @@
 <title>Scegli il tuo personaggio</title>
 
 <style>
+
 html, body {
   margin: 0;
   width: 100%;
@@ -61,44 +62,37 @@ html, body {
   transition: opacity .2s;
   z-index: 999;
 }
+
 </style>
+
 </head>
 
-<script>
-const password = "CIAO2026";
-
-const input = prompt("Inserisci la password per accedere:");
-
-if (input !== password) {
-  document.body.innerHTML = "<h1>Accesso negato</h1>";
-  throw new Error("Accesso negato");
-}
-</script>
+<body>
 
 <div class="stage">
 
   <div class="avatar-slot" style="left:10.45%; top:53.55%;" onclick="selectPlayer('paolo')">
-    <img src="assets/paolo passaporto.png" class="avatar" alt="Paolo">
+    <img src="assets/paolo passaporto.png" class="avatar">
   </div>
 
   <div class="avatar-slot" style="left:26.20%; top:53.55%;" onclick="selectPlayer('andrea')">
-    <img src="assets/andrea passaporto.png" class="avatar" alt="Andrea">
+    <img src="assets/andrea passaporto.png" class="avatar">
   </div>
 
   <div class="avatar-slot" style="left:41.95%; top:53.55%;" onclick="selectPlayer('daniele')">
-    <img src="assets/daniele passaporto.png" class="avatar" alt="Daniele">
+    <img src="assets/daniele passaporto.png" class="avatar">
   </div>
 
   <div class="avatar-slot" style="left:57.78%; top:53.55%;" onclick="selectPlayer('luca')">
-    <img src="assets/luca passaporto.png" class="avatar" alt="Luca">
+    <img src="assets/luca passaporto.png" class="avatar">
   </div>
 
   <div class="avatar-slot" style="left:73.50%; top:53.55%;" onclick="selectPlayer('simona')">
-    <img src="assets/simona passaporto.png" class="avatar" alt="Simona">
+    <img src="assets/simona passaporto.png" class="avatar">
   </div>
 
   <div class="avatar-slot" style="left:89.35%; top:53.55%;" onclick="selectPlayer('ana')">
-    <img src="assets/ana passaporto.png" class="avatar" alt="Ana">
+    <img src="assets/ana passaporto.png" class="avatar">
   </div>
 
 </div>
@@ -106,21 +100,63 @@ if (input !== password) {
 <div id="flash" class="flash"></div>
 
 <script>
+
+// PASSWORD
+
+const password = "CIAO2026";
+
+let authenticated = false;
+
+window.onload = function() {
+
+  while (!authenticated) {
+
+    const input = prompt("Inserisci la password");
+
+    if (input === null) {
+
+      continue;
+
+    }
+
+    if (input === password) {
+
+      authenticated = true;
+
+    } else {
+
+      alert("Password errata");
+
+    }
+
+  }
+
+};
+
 function selectPlayer(name) {
+
   localStorage.setItem("player", name);
 
   const flash = document.getElementById("flash");
+
   flash.style.opacity = "1";
 
   setTimeout(() => {
+
     flash.style.opacity = "0";
+
   }, 180);
 
   setTimeout(() => {
+
     window.location.href = "game.html";
+
   }, 350);
+
 }
+
 </script>
 
 </body>
+
 </html>
