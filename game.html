@@ -2,6 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Mini Game</title>
 
 <style>
@@ -12,11 +14,16 @@ html, body {
   overflow: hidden;
   background: #000;
   font-family: monospace;
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 canvas {
   display: block;
+  width: 100vw;
+  height: 100vh;
   image-rendering: pixelated;
+  touch-action: none;
 }
 
 .phone-item {
@@ -39,8 +46,22 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  syncPhones();
+}
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+
+const BASE_W = 1440;
+const BASE_H = 900;
+
+function getScale() {
+  const scale = Math.min(canvas.width / BASE_W, canvas.height / BASE_H);
+  return Math.max(0.55, Math.min(scale, 1.15));
+}
 
 const playerName = localStorage.getItem("player") || "paolo";
 
@@ -55,23 +76,16 @@ const bgMusic = document.getElementById("bgMusic");
 let musicStarted = false;
 
 function startMusic() {
-
   if (!bgMusic) return;
-
   if (musicStarted) return;
 
   musicStarted = true;
-
   bgMusic.volume = 0.35;
-
   bgMusic.play().catch(() => {});
-
 }
 
 window.addEventListener("load", () => {
-
   startMusic();
-
 });
 
 /* SUONO NOTIFICA CELLULARE */
@@ -128,14 +142,43 @@ function goToCredits() {
 }
 
 const keys = {};
+let targetX = null;
 
 document.addEventListener("keydown", e => {
   keys[e.key] = true;
+  targetX = null;
   initAudio();
 });
 
 document.addEventListener("keyup", e => {
   keys[e.key] = false;
+});
+
+canvas.addEventListener("pointerdown", e => {
+  initAudio();
+
+  if (state !== "room") return;
+
+  targetX = e.clientX - player.width / 2;
+
+  if (targetX > player.x) {
+    player.facing = 1;
+  } else {
+    player.facing = -1;
+  }
+});
+
+canvas.addEventListener("pointermove", e => {
+  if (state !== "room") return;
+  if (!e.buttons && e.pointerType === "mouse") return;
+
+  targetX = e.clientX - player.width / 2;
+
+  if (targetX > player.x) {
+    player.facing = 1;
+  } else {
+    player.facing = -1;
+  }
 });
 
 document.addEventListener("click", () => {
@@ -194,15 +237,15 @@ names.forEach(name => {
 });
 
 function getFloorY() {
-  return canvas.height - 72;
+  return canvas.height - 72 * getScale();
 }
 
 function getForegroundFloorY() {
-  return canvas.height - 35;
+  return canvas.height - 35 * getScale();
 }
 
 function getPhoneY() {
-  return canvas.height - 155;
+  return canvas.height - 155 * getScale();
 }
 
 let player = {
@@ -235,22 +278,47 @@ let cecilia = {
 };
 
 const finalAvatars = [
-  { name: "paolo", x: 110 },
-  { name: "andrea", x: 260 },
-  { name: "daniele", x: 410 },
-  { name: "luca", x: 560 },
-  { name: "simona", x: 710 },
-  { name: "ana", x: 860 }
+  { name: "paolo", xFactor: 0.08 },
+  { name: "andrea", xFactor: 0.21 },
+  { name: "daniele", xFactor: 0.34 },
+  { name: "luca", xFactor: 0.47 },
+  { name: "simona", xFactor: 0.60 },
+  { name: "ana", xFactor: 0.73 }
 ];
 
-window.addEventListener("resize", () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  syncPhones();
+window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", () => {
+  setTimeout(resizeCanvas, 250);
 });
 
 function drawBackground(img) {
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  if (!img || !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  const canvasRatio = canvas.width / canvas.height;
+  const imgRatio = img.naturalWidth / img.naturalHeight;
+
+  let drawW;
+  let drawH;
+  let drawX;
+  let drawY;
+
+  if (imgRatio > canvasRatio) {
+    drawH = canvas.height;
+    drawW = drawH * imgRatio;
+    drawX = (canvas.width - drawW) / 2;
+    drawY = 0;
+  } else {
+    drawW = canvas.width;
+    drawH = drawW / imgRatio;
+    drawX = 0;
+    drawY = (canvas.height - drawH) / 2;
+  }
+
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
 }
 
 function getImageRatio(img) {
@@ -298,29 +366,32 @@ function drawSprite(name, x, floorY, height, moving = false, step = 0, facing = 
 
 function drawFumetto(spriteInfo) {
   const ratio = getImageRatio(images.fumetto);
+  const scale = getScale();
 
-  const bubbleW = 130;
+  const bubbleW = 130 * scale;
   const bubbleH = bubbleW / ratio;
 
   const bubbleX =
     cecilia.x +
     spriteInfo.width / 2 -
     bubbleW / 2 -
-    90;
+    90 * scale;
 
   const bubbleY =
     spriteInfo.y -
     bubbleH -
-    5;
+    5 * scale;
 
   ctx.drawImage(images.fumetto, bubbleX, bubbleY, bubbleW, bubbleH);
 }
 
 function drawDoor(floorY = getFloorY()) {
-  door.x = canvas.width - 295;
-  door.y = floorY - 330;
-  door.w = 225;
-  door.h = 330;
+  const scale = getScale();
+
+  door.w = 225 * scale;
+  door.h = 330 * scale;
+  door.x = canvas.width - 295 * scale;
+  door.y = floorY - door.h;
 
   ctx.drawImage(images.door, door.x, door.y, door.w, door.h);
 }
@@ -378,7 +449,7 @@ function clearPhones() {
 }
 
 function isPhoneOverlapping(newPhone) {
-  const minDistance = 190;
+  const minDistance = 190 * getScale();
 
   for (const phone of phones) {
     const dx = Math.abs(newPhone.x - phone.x);
@@ -404,11 +475,16 @@ function spawnPhones() {
   while (phones.length < 3 && attempts < 100) {
     attempts++;
 
-    const phoneH = 82;
-    const phoneW = 82;
+    const scale = getScale();
+
+    const phoneH = 82 * scale;
+    const phoneW = 82 * scale;
+
+    const minX = 120 * scale;
+    const maxX = Math.max(minX + 50, canvas.width - 180 * scale);
 
     const newPhone = {
-      x: Math.random() * (canvas.width - 500) + 180,
+      x: Math.random() * (maxX - minX) + minX,
       y: getPhoneY(),
       h: phoneH,
       w: phoneW,
@@ -444,23 +520,27 @@ function checkPhones() {
 }
 
 function drawHUD() {
+  const scale = getScale();
+
   ctx.fillStyle = "#2F80FF";
-  ctx.font = "bold 32px monospace";
-  ctx.fillText("📱 " + collected, 40, 55);
+  ctx.font = `bold ${32 * scale}px monospace`;
+  ctx.fillText("📱 " + collected, 40 * scale, 55 * scale);
 }
 
 function drawCup() {
+  const scale = getScale();
+
   const ratio = getImageRatio(images.cup);
-  const baseH = 330;
+  const baseH = 330 * scale;
   const baseW = baseH * ratio;
 
-  const scale = 1 + Math.sin(performance.now() / 180) * 0.08;
+  const pulse = 1 + Math.sin(performance.now() / 180) * 0.08;
 
-  const w = baseW * scale;
-  const h = baseH * scale;
+  const w = baseW * pulse;
+  const h = baseH * pulse;
 
   const x = canvas.width / 2 - w / 2;
-  const y = canvas.height / 2 - h / 2 - 60;
+  const y = canvas.height / 2 - h / 2 - 60 * scale;
 
   ctx.drawImage(images.cup, x, y, w, h);
 }
@@ -479,18 +559,38 @@ function checkDoor() {
 }
 
 function updateRoom(dt) {
+  const scale = getScale();
+
+  player.height = 280 * scale;
+  player.speed = 280 * scale;
+
   player.moving = false;
 
   if (keys["ArrowRight"]) {
+    targetX = null;
     player.x += player.speed * dt;
     player.moving = true;
     player.facing = 1;
   }
 
   if (keys["ArrowLeft"]) {
+    targetX = null;
     player.x -= player.speed * dt;
     player.moving = true;
     player.facing = -1;
+  }
+
+  if (!keys["ArrowRight"] && !keys["ArrowLeft"] && targetX !== null) {
+    const distance = targetX - player.x;
+
+    if (Math.abs(distance) > 4) {
+      player.x += Math.sign(distance) * player.speed * dt;
+      player.moving = true;
+      player.facing = distance > 0 ? 1 : -1;
+    } else {
+      player.x = targetX;
+      targetX = null;
+    }
   }
 
   player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
@@ -529,7 +629,10 @@ function drawRoom() {
 }
 
 function updateFinalRoom(dt) {
-  const exitX = canvas.width - 320;
+  const scale = getScale();
+
+  const exitX = canvas.width - 320 * scale;
+  cecilia.speed = 115 * scale;
 
   if (cecilia.phase === "walk") {
     cecilia.x += cecilia.speed * dt;
@@ -551,10 +654,18 @@ function updateFinalRoom(dt) {
 }
 
 function drawFinalRoom() {
+  const scale = getScale();
+
   drawBackground(images.finalRoom);
 
   finalAvatars.forEach(member => {
-    drawSprite(member.name, member.x, getFloorY(), 250, false);
+    drawSprite(
+      member.name,
+      canvas.width * member.xFactor,
+      getFloorY(),
+      250 * scale,
+      false
+    );
   });
 
   drawDoor(getForegroundFloorY());
@@ -564,7 +675,7 @@ function drawFinalRoom() {
       "cecilia",
       cecilia.x,
       getForegroundFloorY(),
-      250,
+      250 * scale,
       false,
       cecilia.step,
       1,
@@ -578,7 +689,7 @@ function drawFinalRoom() {
       "cecilia",
       cecilia.x,
       getForegroundFloorY(),
-      250,
+      250 * scale,
       true,
       cecilia.step,
       1,
@@ -595,7 +706,7 @@ function drawCredits() {
     return;
   }
 
-  ctx.drawImage(images.end, 0, 0, canvas.width, canvas.height);
+  drawBackground(images.end);
 
   let creditW = canvas.width * 0.75;
   let creditH;
@@ -611,7 +722,7 @@ function drawCredits() {
 
   ctx.drawImage(images.credits, creditX, creditsY, creditW, creditH);
 
-  creditsY -= 2.2;
+  creditsY -= 2.2 * getScale();
 
   if (creditsY < -creditH) {
     creditsFinished = true;
