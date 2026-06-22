@@ -27,6 +27,7 @@ canvas {
 
 .phone-item {
   position: fixed;
+  height: 82px;
   width: auto;
   image-rendering: pixelated;
   pointer-events: none;
@@ -44,74 +45,25 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const DESIGN_W = 1440;
-const DESIGN_H = 900;
-
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   syncPhones();
 }
 
-resizeCanvas();
-
-function getView() {
-  const screenRatio = canvas.width / canvas.height;
-  const designRatio = DESIGN_W / DESIGN_H;
-
-  let w;
-  let h;
-  let x;
-  let y;
-
-  if (screenRatio > designRatio) {
-    h = canvas.height;
-    w = h * designRatio;
-    x = (canvas.width - w) / 2;
-    y = 0;
-  } else {
-    w = canvas.width;
-    h = w / designRatio;
-    x = 0;
-    y = (canvas.height - h) / 2;
-  }
-
-  return {
-    x,
-    y,
-    w,
-    h,
-    scale: w / DESIGN_W
-  };
-}
-
-function sx(x) {
-  const view = getView();
-  return view.x + x * view.scale;
-}
-
-function sy(y) {
-  const view = getView();
-  return view.y + y * view.scale;
-}
-
-function sw(value) {
-  return value * getView().scale;
-}
-
-function screenToGameX(screenX) {
-  const view = getView();
-  return (screenX - view.x) / view.scale;
-}
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 const playerName = localStorage.getItem("player") || "paolo";
 
 let state = "room";
 let collected = 0;
-let creditsY = DESIGN_H;
+
+let creditsY = canvas.height;
 let creditsFinished = false;
 
 const bgMusic = document.getElementById("bgMusic");
+
 let musicStarted = false;
 
 function startMusic() {
@@ -123,8 +75,11 @@ function startMusic() {
   bgMusic.play().catch(() => {});
 }
 
-window.addEventListener("load", startMusic);
+window.addEventListener("load", () => {
+  startMusic();
+});
 
+/* SUONO NOTIFICA CELLULARE */
 let audioCtx = null;
 
 function initAudio() {
@@ -172,7 +127,7 @@ function playCoinSound() {
 function goToCredits() {
   state = "credits";
   clearPhones();
-  creditsY = DESIGN_H;
+  creditsY = canvas.height;
   creditsFinished = false;
   startMusic();
 }
@@ -195,7 +150,7 @@ canvas.addEventListener("pointerdown", e => {
 
   if (state !== "room") return;
 
-  targetX = screenToGameX(e.clientX) - player.width / 2;
+  targetX = e.clientX - player.width / 2;
   player.facing = targetX > player.x ? 1 : -1;
 });
 
@@ -203,11 +158,13 @@ canvas.addEventListener("pointermove", e => {
   if (state !== "room") return;
   if (!e.buttons && e.pointerType === "mouse") return;
 
-  targetX = screenToGameX(e.clientX) - player.width / 2;
+  targetX = e.clientX - player.width / 2;
   player.facing = targetX > player.x ? 1 : -1;
 });
 
-document.addEventListener("click", initAudio);
+document.addEventListener("click", () => {
+  initAudio();
+});
 
 function loadImage(src) {
   const img = new Image();
@@ -261,19 +218,15 @@ names.forEach(name => {
 });
 
 function getFloorY() {
-  return 828;
+  return canvas.height - 72;
 }
 
-function getFinalBackFloorY() {
-  return 875;
-}
-
-function getFinalFrontFloorY() {
-  return 880;
+function getForegroundFloorY() {
+  return canvas.height - 35;
 }
 
 function getPhoneY() {
-  return 745;
+  return canvas.height - 155;
 }
 
 let player = {
@@ -287,8 +240,8 @@ let player = {
 };
 
 let door = {
-  x: 1145,
-  y: 500,
+  x: canvas.width - 295,
+  y: canvas.height - 402,
   w: 225,
   h: 330
 };
@@ -320,14 +273,7 @@ window.addEventListener("orientationchange", () => {
 });
 
 function drawBackground(img) {
-  const view = getView();
-
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  if (!img || !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) return;
-
-  ctx.drawImage(img, view.x, view.y, view.w, view.h);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 }
 
 function getImageRatio(img) {
@@ -361,20 +307,16 @@ function drawSprite(name, x, floorY, height, moving = false, step = 0, facing = 
   ctx.save();
 
   if (facing === -1) {
-    ctx.translate(sx(x + width), sy(y));
+    ctx.translate(x + width, y);
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, sw(width), sw(height));
+    ctx.drawImage(img, 0, 0, width, height);
   } else {
-    ctx.drawImage(img, sx(x), sy(y), sw(width), sw(height));
+    ctx.drawImage(img, x, y, width, height);
   }
 
   ctx.restore();
 
-  return {
-    width,
-    height,
-    y
-  };
+  return { width, height, y };
 }
 
 function drawFumetto(spriteInfo) {
@@ -394,43 +336,16 @@ function drawFumetto(spriteInfo) {
     bubbleH -
     5;
 
-  ctx.drawImage(
-    images.fumetto,
-    sx(bubbleX),
-    sy(bubbleY),
-    sw(bubbleW),
-    sw(bubbleH)
-  );
+  ctx.drawImage(images.fumetto, bubbleX, bubbleY, bubbleW, bubbleH);
 }
 
 function drawDoor(floorY = getFloorY()) {
+  door.x = canvas.width - 295;
+  door.y = floorY - 330;
   door.w = 225;
   door.h = 330;
-  door.x = 1160;
-  door.y = floorY - door.h;
 
-  ctx.drawImage(
-    images.door,
-    sx(door.x),
-    sy(door.y),
-    sw(door.w),
-    sw(door.h)
-  );
-}
-
-function drawFinalDoor() {
-  door.w = 225;
-  door.h = 330;
-  door.x = 1160;
-  door.y = getFinalFrontFloorY() - door.h;
-
-  ctx.drawImage(
-    images.door,
-    sx(door.x),
-    sy(door.y),
-    sw(door.w),
-    sw(door.h)
-  );
+  ctx.drawImage(images.door, door.x, door.y, door.w, door.h);
 }
 
 function rectsOverlap(a, b) {
@@ -465,9 +380,9 @@ function syncPhone(phone) {
 
   phone.y = getPhoneY();
 
-  phone.el.style.left = sx(phone.x) + "px";
-  phone.el.style.top = sy(phone.y) + "px";
-  phone.el.style.height = sw(phone.h) + "px";
+  phone.el.style.left = phone.x + "px";
+  phone.el.style.top = phone.y + "px";
+  phone.el.style.height = phone.h + "px";
 }
 
 function syncPhones() {
@@ -515,8 +430,11 @@ function spawnPhones() {
     const phoneH = 82;
     const phoneW = 82;
 
+    const minX = 120;
+    const maxX = Math.max(minX + 50, canvas.width - 180);
+
     const newPhone = {
-      x: Math.random() * 920 + 170,
+      x: Math.random() * (maxX - minX) + minX,
       y: getPhoneY(),
       h: phoneH,
       w: phoneW,
@@ -553,8 +471,8 @@ function checkPhones() {
 
 function drawHUD() {
   ctx.fillStyle = "#2F80FF";
-  ctx.font = `bold ${sw(32)}px monospace`;
-  ctx.fillText("📱 " + collected, sx(40), sy(55));
+  ctx.font = "bold 32px monospace";
+  ctx.fillText("📱 " + collected, 40, 55);
 }
 
 function drawCup() {
@@ -562,15 +480,15 @@ function drawCup() {
   const baseH = 330;
   const baseW = baseH * ratio;
 
-  const pulse = 1 + Math.sin(performance.now() / 180) * 0.08;
+  const scale = 1 + Math.sin(performance.now() / 180) * 0.08;
 
-  const w = baseW * pulse;
-  const h = baseH * pulse;
+  const w = baseW * scale;
+  const h = baseH * scale;
 
-  const x = DESIGN_W / 2 - w / 2;
-  const y = DESIGN_H / 2 - h / 2 - 60;
+  const x = canvas.width / 2 - w / 2;
+  const y = canvas.height / 2 - h / 2 - 60;
 
-  ctx.drawImage(images.cup, sx(x), sy(y), sw(w), sw(h));
+  ctx.drawImage(images.cup, x, y, w, h);
 }
 
 function checkDoor() {
@@ -578,6 +496,7 @@ function checkDoor() {
   if (collected < 10) return;
 
   const playerHitbox = getPlayerHitbox();
+
   const hit = rectsOverlap(playerHitbox, door);
 
   if (hit) {
@@ -618,7 +537,7 @@ function updateRoom(dt) {
     }
   }
 
-  player.x = Math.max(0, Math.min(DESIGN_W - player.width, player.x));
+  player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
 
   if (player.moving) {
     player.step += dt;
@@ -654,7 +573,7 @@ function drawRoom() {
 }
 
 function updateFinalRoom(dt) {
-  const exitX = 1080;
+  const exitX = canvas.width - 320;
   cecilia.speed = 115;
 
   if (cecilia.phase === "walk") {
@@ -683,19 +602,19 @@ function drawFinalRoom() {
     drawSprite(
       member.name,
       member.x,
-      getFinalBackFloorY(),
+      getForegroundFloorY(),
       250,
       false
     );
   });
 
-  drawFinalDoor();
+  drawDoor(getForegroundFloorY());
 
   if (cecilia.phase === "ciao") {
     const spriteInfo = drawSprite(
       "cecilia",
       cecilia.x,
-      getFinalFrontFloorY(),
+      getForegroundFloorY(),
       250,
       false,
       cecilia.step,
@@ -709,7 +628,7 @@ function drawFinalRoom() {
     drawSprite(
       "cecilia",
       cecilia.x,
-      getFinalFrontFloorY(),
+      getForegroundFloorY(),
       250,
       true,
       cecilia.step,
@@ -727,27 +646,21 @@ function drawCredits() {
     return;
   }
 
-  drawBackground(images.end);
+  ctx.drawImage(images.end, 0, 0, canvas.width, canvas.height);
 
-  let creditW = DESIGN_W * 0.75;
+  let creditW = canvas.width * 0.75;
   let creditH;
 
   if (images.credits.complete && images.credits.naturalWidth > 0) {
     const ratio = images.credits.naturalHeight / images.credits.naturalWidth;
     creditH = creditW * ratio;
   } else {
-    creditH = DESIGN_H * 1.2;
+    creditH = canvas.height * 1.2;
   }
 
-  const creditX = DESIGN_W / 2 - creditW / 2;
+  const creditX = canvas.width / 2 - creditW / 2;
 
-  ctx.drawImage(
-    images.credits,
-    sx(creditX),
-    sy(creditsY),
-    sw(creditW),
-    sw(creditH)
-  );
+  ctx.drawImage(images.credits, creditX, creditsY, creditW, creditH);
 
   creditsY -= 2.2;
 
