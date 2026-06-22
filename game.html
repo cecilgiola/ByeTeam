@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <title>Mini Game</title>
 
 <style>
@@ -45,8 +44,8 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const DESIGN_W = 1440;
-const DESIGN_H = 900;
+const BASE_W = 1440;
+const BASE_H = 900;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -54,68 +53,49 @@ function resizeCanvas() {
   syncPhones();
 }
 
-resizeCanvas();
-
 function getView() {
-  const screenRatio = canvas.width / canvas.height;
-  const designRatio = DESIGN_W / DESIGN_H;
+  const scale = Math.min(canvas.width / BASE_W, canvas.height / BASE_H);
+  const w = BASE_W * scale;
+  const h = BASE_H * scale;
+  const x = (canvas.width - w) / 2;
+  const y = (canvas.height - h) / 2;
 
-  let w, h, x, y;
-
-  if (screenRatio > designRatio) {
-    h = canvas.height;
-    w = h * designRatio;
-    x = (canvas.width - w) / 2;
-    y = 0;
-  } else {
-    w = canvas.width;
-    h = w / designRatio;
-    x = 0;
-    y = (canvas.height - h) / 2;
-  }
-
-  return {
-    x,
-    y,
-    w,
-    h,
-    scale: w / DESIGN_W
-  };
+  return { x, y, w, h, scale };
 }
 
 function sx(x) {
-  const view = getView();
-  return view.x + x * view.scale;
+  const v = getView();
+  return v.x + x * v.scale;
 }
 
 function sy(y) {
-  const view = getView();
-  return view.y + y * view.scale;
+  const v = getView();
+  return v.y + y * v.scale;
 }
 
-function sw(value) {
-  return value * getView().scale;
+function sw(v) {
+  return v * getView().scale;
 }
 
 function screenToGameX(screenX) {
-  const view = getView();
-  return (screenX - view.x) / view.scale;
+  const v = getView();
+  return (screenX - v.x) / v.scale;
 }
+
+resizeCanvas();
 
 const playerName = localStorage.getItem("player") || "paolo";
 
 let state = "room";
 let collected = 0;
-let creditsY = DESIGN_H;
+let creditsY = BASE_H;
 let creditsFinished = false;
 
 const bgMusic = document.getElementById("bgMusic");
 let musicStarted = false;
 
 function startMusic() {
-  if (!bgMusic) return;
-  if (musicStarted) return;
-
+  if (!bgMusic || musicStarted) return;
   musicStarted = true;
   bgMusic.volume = 0.35;
   bgMusic.play().catch(() => {});
@@ -141,7 +121,6 @@ function playCoinSound() {
   initAudio();
 
   const now = audioCtx.currentTime;
-
   const osc1 = audioCtx.createOscillator();
   const osc2 = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -170,7 +149,7 @@ function playCoinSound() {
 function goToCredits() {
   state = "credits";
   clearPhones();
-  creditsY = DESIGN_H;
+  creditsY = BASE_H;
   creditsFinished = false;
   startMusic();
 }
@@ -190,7 +169,6 @@ document.addEventListener("keyup", e => {
 
 canvas.addEventListener("pointerdown", e => {
   initAudio();
-
   if (state !== "room") return;
 
   targetX = screenToGameX(e.clientX) - player.width / 2;
@@ -232,15 +210,7 @@ const images = {
   fumetto: loadImage("assets/fumetto.png")
 };
 
-const names = [
-  "paolo",
-  "andrea",
-  "daniele",
-  "luca",
-  "simona",
-  "ana",
-  "cecilia"
-];
+const names = ["paolo", "andrea", "daniele", "luca", "simona", "ana", "cecilia"];
 
 const sprites = {};
 
@@ -267,11 +237,11 @@ function getPhoneY() {
 }
 
 function getFinalBackFloorY() {
-  return 875;
+  return 878;
 }
 
 function getFinalFrontFloorY() {
-  return 880;
+  return 882;
 }
 
 let player = {
@@ -304,12 +274,12 @@ let cecilia = {
 };
 
 const finalAvatars = [
-  { name: "paolo", x: 80 },
-  { name: "andrea", x: 180 },
-  { name: "daniele", x: 280 },
-  { name: "luca", x: 380 },
-  { name: "simona", x: 480 },
-  { name: "ana", x: 580 }
+  { name: "paolo", x: 70 },
+  { name: "andrea", x: 165 },
+  { name: "daniele", x: 260 },
+  { name: "luca", x: 355 },
+  { name: "simona", x: 450 },
+  { name: "ana", x: 545 }
 ];
 
 window.addEventListener("resize", resizeCanvas);
@@ -318,14 +288,14 @@ window.addEventListener("orientationchange", () => {
 });
 
 function drawBackground(img) {
-  const view = getView();
+  const v = getView();
 
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   if (!img || !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) return;
 
-  ctx.drawImage(img, view.x, view.y, view.w, view.h);
+  ctx.drawImage(img, v.x, v.y, v.w, v.h);
 }
 
 function getImageRatio(img) {
@@ -546,8 +516,8 @@ function drawCup() {
   const w = baseW * pulse;
   const h = baseH * pulse;
 
-  const x = DESIGN_W / 2 - w / 2;
-  const y = DESIGN_H / 2 - h / 2 - 60;
+  const x = BASE_W / 2 - w / 2;
+  const y = BASE_H / 2 - h / 2 - 60;
 
   ctx.drawImage(images.cup, sx(x), sy(y), sw(w), sw(h));
 }
@@ -597,7 +567,7 @@ function updateRoom(dt) {
     }
   }
 
-  player.x = Math.max(0, Math.min(DESIGN_W - player.width, player.x));
+  player.x = Math.max(0, Math.min(BASE_W - player.width, player.x));
 
   if (player.moving) {
     player.step += dt;
@@ -708,17 +678,17 @@ function drawCredits() {
 
   drawBackground(images.end);
 
-  let creditW = DESIGN_W * 0.75;
+  let creditW = BASE_W * 0.75;
   let creditH;
 
   if (images.credits.complete && images.credits.naturalWidth > 0) {
     const ratio = images.credits.naturalHeight / images.credits.naturalWidth;
     creditH = creditW * ratio;
   } else {
-    creditH = DESIGN_H * 1.2;
+    creditH = BASE_H * 1.2;
   }
 
-  const creditX = DESIGN_W / 2 - creditW / 2;
+  const creditX = BASE_W / 2 - creditW / 2;
 
   ctx.drawImage(
     images.credits,
