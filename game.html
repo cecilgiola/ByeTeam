@@ -2,7 +2,6 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mini Game</title>
 
 <style>
@@ -13,20 +12,16 @@ html, body {
   overflow: hidden;
   background: #000;
   font-family: monospace;
-  touch-action: none;
-  overscroll-behavior: none;
 }
 
 canvas {
   display: block;
-  width: 100vw;
-  height: 100vh;
   image-rendering: pixelated;
-  touch-action: none;
 }
 
 .phone-item {
   position: fixed;
+  height: 82px;
   width: auto;
   image-rendering: pixelated;
   pointer-events: none;
@@ -44,65 +39,42 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const BASE_W = 1440;
-const BASE_H = 900;
-
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  syncPhones();
-}
-
-function getView() {
-  const scale = Math.min(canvas.width / BASE_W, canvas.height / BASE_H);
-  const w = BASE_W * scale;
-  const h = BASE_H * scale;
-  const x = (canvas.width - w) / 2;
-  const y = (canvas.height - h) / 2;
-
-  return { x, y, w, h, scale };
-}
-
-function sx(x) {
-  const v = getView();
-  return v.x + x * v.scale;
-}
-
-function sy(y) {
-  const v = getView();
-  return v.y + y * v.scale;
-}
-
-function sw(v) {
-  return v * getView().scale;
-}
-
-function screenToGameX(screenX) {
-  const v = getView();
-  return (screenX - v.x) / v.scale;
-}
-
-resizeCanvas();
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 const playerName = localStorage.getItem("player") || "paolo";
 
 let state = "room";
 let collected = 0;
-let creditsY = BASE_H;
+
+let creditsY = canvas.height;
 let creditsFinished = false;
 
 const bgMusic = document.getElementById("bgMusic");
+
 let musicStarted = false;
 
 function startMusic() {
-  if (!bgMusic || musicStarted) return;
+
+  if (!bgMusic) return;
+
+  if (musicStarted) return;
+
   musicStarted = true;
+
   bgMusic.volume = 0.35;
+
   bgMusic.play().catch(() => {});
+
 }
 
-window.addEventListener("load", startMusic);
+window.addEventListener("load", () => {
 
+  startMusic();
+
+});
+
+/* SUONO NOTIFICA CELLULARE */
 let audioCtx = null;
 
 function initAudio() {
@@ -121,6 +93,7 @@ function playCoinSound() {
   initAudio();
 
   const now = audioCtx.currentTime;
+
   const osc1 = audioCtx.createOscillator();
   const osc2 = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -149,17 +122,15 @@ function playCoinSound() {
 function goToCredits() {
   state = "credits";
   clearPhones();
-  creditsY = BASE_H;
+  creditsY = canvas.height;
   creditsFinished = false;
   startMusic();
 }
 
 const keys = {};
-let targetX = null;
 
 document.addEventListener("keydown", e => {
   keys[e.key] = true;
-  targetX = null;
   initAudio();
 });
 
@@ -167,23 +138,9 @@ document.addEventListener("keyup", e => {
   keys[e.key] = false;
 });
 
-canvas.addEventListener("pointerdown", e => {
+document.addEventListener("click", () => {
   initAudio();
-  if (state !== "room") return;
-
-  targetX = screenToGameX(e.clientX) - player.width / 2;
-  player.facing = targetX > player.x ? 1 : -1;
 });
-
-canvas.addEventListener("pointermove", e => {
-  if (state !== "room") return;
-  if (!e.buttons && e.pointerType === "mouse") return;
-
-  targetX = screenToGameX(e.clientX) - player.width / 2;
-  player.facing = targetX > player.x ? 1 : -1;
-});
-
-document.addEventListener("click", initAudio);
 
 function loadImage(src) {
   const img = new Image();
@@ -210,7 +167,15 @@ const images = {
   fumetto: loadImage("assets/fumetto.png")
 };
 
-const names = ["paolo", "andrea", "daniele", "luca", "simona", "ana", "cecilia"];
+const names = [
+  "paolo",
+  "andrea",
+  "daniele",
+  "luca",
+  "simona",
+  "ana",
+  "cecilia"
+];
 
 const sprites = {};
 
@@ -229,19 +194,15 @@ names.forEach(name => {
 });
 
 function getFloorY() {
-  return 828;
+  return canvas.height - 72;
+}
+
+function getForegroundFloorY() {
+  return canvas.height - 35;
 }
 
 function getPhoneY() {
-  return 745;
-}
-
-function getFinalBackFloorY() {
-  return 878;
-}
-
-function getFinalFrontFloorY() {
-  return 882;
+  return canvas.height - 155;
 }
 
 let player = {
@@ -255,8 +216,8 @@ let player = {
 };
 
 let door = {
-  x: 1160,
-  y: 498,
+  x: canvas.width - 295,
+  y: canvas.height - 402,
   w: 225,
   h: 330
 };
@@ -265,7 +226,7 @@ let phones = [];
 
 let cecilia = {
   x: 80,
-  height: 250,
+  height: 220,
   speed: 115,
   step: 0,
   phase: "walk",
@@ -274,28 +235,22 @@ let cecilia = {
 };
 
 const finalAvatars = [
-  { name: "paolo", x: 70 },
-  { name: "andrea", x: 165 },
-  { name: "daniele", x: 260 },
-  { name: "luca", x: 355 },
-  { name: "simona", x: 450 },
-  { name: "ana", x: 545 }
+  { name: "paolo", x: 110 },
+  { name: "andrea", x: 260 },
+  { name: "daniele", x: 410 },
+  { name: "luca", x: 560 },
+  { name: "simona", x: 710 },
+  { name: "ana", x: 860 }
 ];
 
-window.addEventListener("resize", resizeCanvas);
-window.addEventListener("orientationchange", () => {
-  setTimeout(resizeCanvas, 250);
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  syncPhones();
 });
 
 function drawBackground(img) {
-  const v = getView();
-
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  if (!img || !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) return;
-
-  ctx.drawImage(img, v.x, v.y, v.w, v.h);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 }
 
 function getImageRatio(img) {
@@ -329,11 +284,11 @@ function drawSprite(name, x, floorY, height, moving = false, step = 0, facing = 
   ctx.save();
 
   if (facing === -1) {
-    ctx.translate(sx(x + width), sy(y));
+    ctx.translate(x + width, y);
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, sw(width), sw(height));
+    ctx.drawImage(img, 0, 0, width, height);
   } else {
-    ctx.drawImage(img, sx(x), sy(y), sw(width), sw(height));
+    ctx.drawImage(img, x, y, width, height);
   }
 
   ctx.restore();
@@ -358,28 +313,16 @@ function drawFumetto(spriteInfo) {
     bubbleH -
     5;
 
-  ctx.drawImage(
-    images.fumetto,
-    sx(bubbleX),
-    sy(bubbleY),
-    sw(bubbleW),
-    sw(bubbleH)
-  );
+  ctx.drawImage(images.fumetto, bubbleX, bubbleY, bubbleW, bubbleH);
 }
 
 function drawDoor(floorY = getFloorY()) {
+  door.x = canvas.width - 295;
+  door.y = floorY - 330;
   door.w = 225;
   door.h = 330;
-  door.x = 1160;
-  door.y = floorY - door.h;
 
-  ctx.drawImage(
-    images.door,
-    sx(door.x),
-    sy(door.y),
-    sw(door.w),
-    sw(door.h)
-  );
+  ctx.drawImage(images.door, door.x, door.y, door.w, door.h);
 }
 
 function rectsOverlap(a, b) {
@@ -414,9 +357,9 @@ function syncPhone(phone) {
 
   phone.y = getPhoneY();
 
-  phone.el.style.left = sx(phone.x) + "px";
-  phone.el.style.top = sy(phone.y) + "px";
-  phone.el.style.height = sw(phone.h) + "px";
+  phone.el.style.left = phone.x + "px";
+  phone.el.style.top = phone.y + "px";
+  phone.el.style.height = phone.h + "px";
 }
 
 function syncPhones() {
@@ -465,7 +408,7 @@ function spawnPhones() {
     const phoneW = 82;
 
     const newPhone = {
-      x: Math.random() * 920 + 170,
+      x: Math.random() * (canvas.width - 500) + 180,
       y: getPhoneY(),
       h: phoneH,
       w: phoneW,
@@ -502,8 +445,8 @@ function checkPhones() {
 
 function drawHUD() {
   ctx.fillStyle = "#2F80FF";
-  ctx.font = `bold ${sw(32)}px monospace`;
-  ctx.fillText("📱 " + collected, sx(40), sy(55));
+  ctx.font = "bold 32px monospace";
+  ctx.fillText("📱 " + collected, 40, 55);
 }
 
 function drawCup() {
@@ -511,15 +454,15 @@ function drawCup() {
   const baseH = 330;
   const baseW = baseH * ratio;
 
-  const pulse = 1 + Math.sin(performance.now() / 180) * 0.08;
+  const scale = 1 + Math.sin(performance.now() / 180) * 0.08;
 
-  const w = baseW * pulse;
-  const h = baseH * pulse;
+  const w = baseW * scale;
+  const h = baseH * scale;
 
-  const x = BASE_W / 2 - w / 2;
-  const y = BASE_H / 2 - h / 2 - 60;
+  const x = canvas.width / 2 - w / 2;
+  const y = canvas.height / 2 - h / 2 - 60;
 
-  ctx.drawImage(images.cup, sx(x), sy(y), sw(w), sw(h));
+  ctx.drawImage(images.cup, x, y, w, h);
 }
 
 function checkDoor() {
@@ -536,38 +479,21 @@ function checkDoor() {
 }
 
 function updateRoom(dt) {
-  player.height = 280;
-  player.speed = 280;
   player.moving = false;
 
   if (keys["ArrowRight"]) {
-    targetX = null;
     player.x += player.speed * dt;
     player.moving = true;
     player.facing = 1;
   }
 
   if (keys["ArrowLeft"]) {
-    targetX = null;
     player.x -= player.speed * dt;
     player.moving = true;
     player.facing = -1;
   }
 
-  if (!keys["ArrowRight"] && !keys["ArrowLeft"] && targetX !== null) {
-    const distance = targetX - player.x;
-
-    if (Math.abs(distance) > 4) {
-      player.x += Math.sign(distance) * player.speed * dt;
-      player.moving = true;
-      player.facing = distance > 0 ? 1 : -1;
-    } else {
-      player.x = targetX;
-      targetX = null;
-    }
-  }
-
-  player.x = Math.max(0, Math.min(BASE_W - player.width, player.x));
+  player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
 
   if (player.moving) {
     player.step += dt;
@@ -603,8 +529,7 @@ function drawRoom() {
 }
 
 function updateFinalRoom(dt) {
-  const exitX = 1080;
-  cecilia.speed = 115;
+  const exitX = canvas.width - 320;
 
   if (cecilia.phase === "walk") {
     cecilia.x += cecilia.speed * dt;
@@ -629,22 +554,16 @@ function drawFinalRoom() {
   drawBackground(images.finalRoom);
 
   finalAvatars.forEach(member => {
-    drawSprite(
-      member.name,
-      member.x,
-      getFinalBackFloorY(),
-      250,
-      false
-    );
+    drawSprite(member.name, member.x, getFloorY(), 250, false);
   });
 
-  drawDoor(getFinalFrontFloorY());
+  drawDoor(getForegroundFloorY());
 
   if (cecilia.phase === "ciao") {
     const spriteInfo = drawSprite(
       "cecilia",
       cecilia.x,
-      getFinalFrontFloorY(),
+      getForegroundFloorY(),
       250,
       false,
       cecilia.step,
@@ -658,7 +577,7 @@ function drawFinalRoom() {
     drawSprite(
       "cecilia",
       cecilia.x,
-      getFinalFrontFloorY(),
+      getForegroundFloorY(),
       250,
       true,
       cecilia.step,
@@ -676,27 +595,21 @@ function drawCredits() {
     return;
   }
 
-  drawBackground(images.end);
+  ctx.drawImage(images.end, 0, 0, canvas.width, canvas.height);
 
-  let creditW = BASE_W * 0.75;
+  let creditW = canvas.width * 0.75;
   let creditH;
 
   if (images.credits.complete && images.credits.naturalWidth > 0) {
     const ratio = images.credits.naturalHeight / images.credits.naturalWidth;
     creditH = creditW * ratio;
   } else {
-    creditH = BASE_H * 1.2;
+    creditH = canvas.height * 1.2;
   }
 
-  const creditX = BASE_W / 2 - creditW / 2;
+  const creditX = canvas.width / 2 - creditW / 2;
 
-  ctx.drawImage(
-    images.credits,
-    sx(creditX),
-    sy(creditsY),
-    sw(creditW),
-    sw(creditH)
-  );
+  ctx.drawImage(images.credits, creditX, creditsY, creditW, creditH);
 
   creditsY -= 2.2;
 
